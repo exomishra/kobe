@@ -29,6 +29,11 @@ KOBE adds the geometrical limitations and the physical detection biases of the t
 
 KOBE has three modules for this: KOBE Shadows, KOBE Transits, and KOBE vetter. Each module takes care of each limitation mentioned above. To read more about the details, see  my paper [Mishra et. al. 2020 in prep](https://www.lokeshmishra.com/).
 
+Here are a few images of synthetic systems as their transit geometry is examined by KOBE. The colored bands shows the Transit Shadow Band for all planets in the system.  
+<img src="/images/ng76_sys854.png" width="300" height="300"/>
+<img src="/images/ng76_sys269.png" width="300" height="300"/>
+<img src="/images/ng74_sys661.png" width="300" height="300"/>
+
 ## What can I use KOBE for?
 
 You can use KOBE for your studies! If you want to compare a theoretical population of planets with exoplanets found by a transit survey, you can use KOBE to bias your theoretical population. 
