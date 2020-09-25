@@ -5,7 +5,7 @@ The physical aspect of KOBE is explained in detail in my paper [Mishra et. al. 2
 
 ## The computational aspect
 
-This part may not be very user friendly. Consider contacting me!
+This part may not be very user friendly. Consider contacting me or see my_notes!
 
 The computational part is sub-divided into three parts:
 1. kobe.py  
