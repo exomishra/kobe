@@ -27,7 +27,7 @@ KOBE is a program which allows theoretically simulated planets to be compared wi
 
 KOBE adds the geometrical limitations and the physical detection biases of the transit method (mentioned above) to a given populations of theoretical planets. In addition, it also adds the completeness and reliability of a transit survey.
 
-KOBE has three modules for this: KOBE Shadows, KOBE Transits, and KOBE vetter. Each module takes care of each limitation mentioned above. To read more about the details, see  my paper [Mishra et. al. 2020 in prep.](https://www.lokeshmishra.com/).
+KOBE has three modules for this: KOBE Shadows, KOBE Transits, and KOBE vetter. Each module takes care of each limitation mentioned above. To read more about the details, see  my paper [Mishra et. al. 2020 in prep](https://www.lokeshmishra.com/).
 
 ## What can I use KOBE for?
 
