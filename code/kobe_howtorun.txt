@@ -1,0 +1,17 @@
+--------------------------------------
+KOBE - Kepler Observes Bern Exoplanets
+Author - Lokesh Mishra, University of Bern and Geneva Observatory
+Date - 04.12.2020
+--------------------------------------
+
+How To Run KOBE?
+
+1. Clone this repository: git clone https://github.com/lmish/kobe.git
+
+2. Set column definitions as per your data
+
+3. Set your choices via kobe_choice.py
+
+4. Run kobe in the terminal: python kobe_driver
+
+5. That's it. Your data will be saved in the output directory which you specify in kobe_choice.py
