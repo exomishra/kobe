@@ -765,7 +765,7 @@ def process_input_completo(df_input, mass_threshold, calculate_period, mstar):
     # df_input[col_p1bar_radius] = df_input[col_p1bar_radius]*11.208981  
 
     # read orbital elements from auxiliary file:
-    df_refred = pd.read_csv(input_directory+auxiliary_file, delim_whitespace=True, header=None, low_memory=False)
+    df_refred = pd.read_csv(auxiliary_file, delim_whitespace=True, header=None, low_memory=False)
     col_refred_system = 128-1
     col_refred_planet = 129-1
 

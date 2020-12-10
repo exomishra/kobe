@@ -41,8 +41,8 @@ time_age = '5e9'
 # if it throws an error, try using an age>2.3e7
 
 auxiliary_file = 'ref_red5e9.dat'
-# is none if all information is in input file
-# otherwise provide file name (ensure auxiliary file is input_directory)
+# None if all information is in input file
+# otherwise provide absolute file path
 # this file is read only in your self-writted processing funtion
 
 calculate_period = True
