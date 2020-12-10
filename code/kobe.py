@@ -210,6 +210,12 @@ def calculate_shadows(df_input, system_id, npoints=1e7,
         check_norm = np.where(abs(v_prime_norm-1)<1e-15, v_prime_norm, 0)
         if check_norm.all() == False:
             print('Sanity Test 2 - FAILED. Not all vectors are unit normed. ')
+
+        check_norm = np.where((abs(v_prime_norm)-1)<1e-2, v_prime_norm,0)
+        if check_norm.all() == False:
+            print('Sanity Test 3 - FAILED. Not all vectors are unit normed. ')
+
+
         
         ### Get cartesian of primed (rotated) vectors
         x_prime, y_prime, z_prime = np.hsplit(v_prime,3)
@@ -491,10 +497,11 @@ def calculate_completeness(df_input, x_col, y_col, x_range, y_range, injection_t
             else:
                 completeness[xind][yind] = pc_injections[xind][yind]/total_injections[xind][yind]
             totalbins += 1
-    print('Bins along x and y: ', total_injections.shape) 
-    print('Number of bins with less than %d injections = %d'%(injection_threshold,thresholdbins))
-    print('Number of empty bins = %d'%(emptybins))
-    print('Number of total bins = %d'%(totalbins))
+    if print_details == True:
+        print('Bins along x and y: ', total_injections.shape) 
+        print('Number of bins with less than %d injections = %d'%(injection_threshold,thresholdbins))
+        print('Number of empty bins = %d'%(emptybins))
+        print('Number of total bins = %d'%(totalbins))
     metadata = 'Completeness Calculation Information: \n Column along x is %s with min %.2f, max %.2f and step size %d. \n Column along y is %s with min %.2f, max %.2f and step size %.2f. \n Order of output: this text, total injections, pc injections, completeness(over threshold), \n x_range(mix, max, step), y_range(min, max, step). \n Note: Completeness ranges from 0-1. \n Completeness of -1 flags when total injected TCEs are either 0 or less than threshold injections of %d. \n Spacing is %s. \n Disposition Score cutoff is at %.1f'%(x_col,x_range[0],x_range[1],x_range[2],y_col,y_range[0],y_range[1],y_range[2],injection_threshold, spacing, dispscore_cutoff)
     
     output =  np.array([metadata,total_injections, pc_injections, completeness, x_range, y_range,dispscore_cutoff], dtype=object)
@@ -606,6 +613,14 @@ def process_input_bern(df_input, mass_threshold, calculate_period, mstar):
     # 5 couldn't start, 6 not started, 8 core evaporated, 9 tidally spiralled
     df_input = df_input.loc[df_input[col_status]==0]
 
+
+    # convert Rj to Rearth
+    # astropy_constants.R_jup/astropy_constants.R_earth = 11.208981
+    df_input[col_core_radius] = df_input[col_core_radius]*11.208981
+    df_input[col_total_radius] = df_input[col_total_radius]*11.208981
+    df_input[col_transit_radius] = df_input[col_transit_radius]*11.208981
+    df_input[col_p1bar_radius] = df_input[col_p1bar_radius]*11.208981 
+
     # fixing radius
     # if time_age is < 2.3e7 then use max of core or p1bar radius (planete)
     # if time_age is > 2.3e7 then use max of core or transit radius (completo)
@@ -640,15 +655,145 @@ def process_input_bern(df_input, mass_threshold, calculate_period, mstar):
         kepler_orbit_constant = 4*(np.pi**2)*(sp_constants.gravitational_constant**-1)*(df_input[col_m_star]**-1)        
         df_input[col_period] = ((((df_input[col_sma]*sp_constants.astronomical_unit)**3)*kepler_orbit_constant)**0.5)*(sp_constants.day**-1)    
         
-    # convert Rj to Rearth
-    # astropy_constants.R_jup/astropy_constants.R_earth = 11.208981
-    df_input[col_core_radius] = df_input[col_core_radius]*11.208981
-    df_input[col_total_radius] = df_input[col_total_radius]*11.208981
-    df_input[col_transit_radius] = df_input[col_transit_radius]*11.208981
-    df_input[col_p1bar_radius] = df_input[col_p1bar_radius]*11.208981  
+
 
     # convert inclination from radians to degrees
-    df_input[col_inc] = df_input[col_inc]*(180/np.pi)    
+    # df_input[col_inc] = df_input[col_inc]*(180/np.pi)    
+
+    # sort by sma
+    df_input = sort_by_column(df_input, which_column=col_sma, col_system=col_system_pop,col_planet=col_planet_pop)
+
+    # correct system, planet numbers and add multiplicity
+    df_input = correct_system_planet_numbers(df_input, col_system=col_system_pop, col_planet=col_planet_pop,
+                                            new_system_column=col_system, new_planet_column=col_planet,
+                                            col_planetmultiplicity=col_planetmultiplicity, correct_index=True)
+
+    return df_input
+
+def process_input_completo(df_input, mass_threshold, calculate_period, mstar):
+    """
+    Process the input a bit. This function has been developed for Bern Model.
+    You may need to do your input processing. 
+
+    Parameters
+    ----------
+    
+    df_input : pandas dataframe
+        an input of data
+
+    mass_threshold : float/int
+        minimum mass of a planet which is kept (planets with mass < mass_threshold are dropped)
+
+    calculate_period : boolean
+        whether to calculate period from sma, mass of star
+
+    mstar : float or string
+        constant mass of star in msun
+    
+    Output
+    ------
+
+    df_output : pandas dataframe
+        an output of data
+
+    Notes (for processing bern model output)
+    ----
+    - floor emps status to make integer
+    - remove ejected/accreeted/collided planets
+    - deal with radius definition
+    - fix negative sma
+    - calculate periods
+    - read orbital elements from ref_red
+    - convert inclination to degrees
+    - sort planets by sma
+    - correct system numbers, planet numbers and multiplicity    
+    - correct index of final output 
+
+    """
+
+    # masscut
+    df_input = df_input.loc[df_input[col_mass]>= mass_threshold]
+
+    # remove planets that did not end well
+    # in bern model this is checked via column 'emps_status'
+    # status codes: 0 fine, negative accreted by planet, 2 ejected, 3 accreted by star
+    # 5 couldn't start, 6 not started, 8 core evaporated, 9 tidally spiralled
+    df_input[col_status] = np.floor(df_input[col_status])
+    df_input = df_input.loc[df_input[col_status]==0]
+
+    df_input.index = np.arange(df_input.shape[0])    
+
+    # fixing radius
+    # if time_age is < 2.3e7 then use max of core or p1bar radius (planete)
+    # if time_age is > 2.3e7 then use max of core or transit radius (completo)
+    # all final radius values are stored in col_total_radius:
+    if time_age != None:
+        if float(time_age) < 2.3e7:
+            df_input['radius'] = df_input[[col_core_radius,col_p1bar_radius]].max(axis=1)
+            
+        elif float(time_age) > 2.3e7:
+            df_input['radius'] = df_input[[col_core_radius,col_transit_radius]].max(axis=1) 
+  
+
+    # fix planets with negative sma (planets with sma less than 1e3 are put at 1e2)
+    # note: 4e3 au is solar radii
+    if df_input.loc[df_input[col_sma]<0].shape[0]>0:
+        print('Error: %d Planets found with SMA < 0 au. SMA replaced to 0.01 au.'%(df_input.loc[df_in[col_sma]<0][col_planet].unique().shape[0]))
+    df_input = df_input.where(df_input[col_sma]>=0,other=10**-2)
+
+    
+    # if mstar is not a column then set constant value:
+    # else copy column
+    if mstar_column == False:
+        print('mstar is not a column; reading value mstar = %.2f msun.'%(mstar))        
+        mstar = mstar * mass_sun.value
+        df_input[col_m_star] = mstar
+    elif mstar_column == True:
+        df_input[col_m_star] = df_input[mstar] * mass_sun.value
+        print('mstar column found.')
+
+    # calculate period (assuming circular orbit)
+    if calculate_period == True:
+        kepler_orbit_constant = 4*(np.pi**2)*(sp_constants.gravitational_constant**-1)*(df_input[col_m_star]**-1)        
+        df_input[col_period] = ((((df_input[col_sma]*sp_constants.astronomical_unit)**3)*kepler_orbit_constant)**0.5)*(sp_constants.day**-1)    
+        
+    # convert Rj to Rearth
+    # astropy_constants.R_jup/astropy_constants.R_earth = 11.208981
+    # df_input[col_core_radius] = df_input[col_core_radius]*11.208981
+    # df_input[col_total_radius] = df_input[col_total_radius]*11.208981
+    # df_input[col_transit_radius] = df_input[col_transit_radius]*11.208981
+    # df_input[col_p1bar_radius] = df_input[col_p1bar_radius]*11.208981  
+
+    # read orbital elements from auxiliary file:
+    df_refred = pd.read_csv(input_directory+auxiliary_file, delim_whitespace=True, header=None, low_memory=False)
+    col_refred_system = 128-1
+    col_refred_planet = 129-1
+
+    # read from corresponding ref_red 
+    col_refred_ecc = 63-1
+    col_refred_inc = 64-1
+    col_refred_long_node = 110-1
+    col_refred_long_peri = 111-1
+
+    # loop over input dataframe
+    if print_details == True:
+        print('Copying data from auxiliary file.')
+    for index_row in range(df_input.shape[0]):
+        planet_id = df_input.iloc[index_row,col_planet_pop]
+        system_id = df_input.iloc[index_row,col_system_pop]
+        condition = (df_refred[col_refred_system]==system_id) & (df_refred[col_refred_planet]==planet_id)
+        df_input.loc[index_row, col_ecc] = df_refred.loc[condition][col_refred_ecc].to_numpy()[0]
+        df_input.loc[index_row, col_inc] = df_refred.loc[condition][col_refred_inc].to_numpy()[0]
+        df_input.loc[index_row, col_long_node] = df_refred.loc[condition][col_refred_long_node].to_numpy()[0]
+        df_input.loc[index_row, col_long_peri] = df_refred.loc[condition][col_refred_long_peri].to_numpy()[0] 
+        # print(index_row, planet_id, system_id,df_refred.loc[condition][col_refred_ecc].to_numpy()[0])
+
+
+    if print_details == True:
+        print('Finished copying data.')
+
+    # convert inclination from radians to degrees
+    # df_input[col_inc] = df_input[col_inc]*(180/np.pi)    
 
     # sort by sma
     df_input = sort_by_column(df_input, which_column=col_sma, col_system=col_system_pop,col_planet=col_planet_pop)
@@ -737,8 +882,8 @@ def sort_by_column(df_input,which_column, col_system, col_planet, ascending_orde
     df_input.index = np.arange(df_input.shape[0])
     
     # Total number of systems
-    iterations = int(df_input.iloc[-1][col_system])
-    system_array = df_input[col_system]
+    iterations = int(df_input.iloc[-1][col_system_pop])
+    system_array = df_input[col_system_pop]
     
     # Create new empty dataframe
     df_sorted = pd.DataFrame()
@@ -875,7 +1020,7 @@ def kobe_shadows(df_input,cdpp):
     # This loops over all the systems present in the current ref_red file.
 
         if print_details == True:
-            print('Working on system number %d'%(index_system+1))
+            print('Calculating Transit Shadow Band for system - %d'%(index_system+1))
 
         # step 5 call kepler inclination or call kepler shadows
         # df_shadow = kobe.calculate_shadows(df_input=df_input, dict_column=dict_input,system_id=index_system,npoints=1e7,print_probability=print_details,grazing_transits=grazing_transits)

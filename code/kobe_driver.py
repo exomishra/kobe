@@ -36,6 +36,7 @@ from kobe_choices import *
 from kobe_columns import *
 #-------------------------------------
 kobe.print_header()
+print('KOBE is working on %s.'%(model))
 ####################################
 time_start = time.time()
 ####################################
@@ -154,14 +155,38 @@ for index_files in range(iterations_files):
 	print('----------------------------------')	
 
 	# step 1 read file
-	df_input = pd.read_csv(input_directory+files[index_files], delim_whitespace=1,header=None)
+	df_input = pd.read_csv(input_directory+files[index_files], delim_whitespace=True,header=None, low_memory=False)
+
 
 	# step 2 process the input
-	df_input = kobe.process_input_bern(df_input= df_input,mass_threshold = mass_threshold, 
+	print('KOBE is procssing input file(s).')
+	print('----------------------------------')	
+	if model == 'bern_model':
+		df_input = kobe.process_input_bern(df_input= df_input,mass_threshold = mass_threshold, 
 									calculate_period=calculate_period, mstar=mstar)
-	if print_details ==True:
-		print('Finished processing input data.')
+		if print_details ==True:
+			print('Finished processing input data.')
+			print('----------------------------------')
+	elif model == 'completo':
+		df_input = kobe.process_input_completo(df_input= df_input,mass_threshold = mass_threshold, 
+									calculate_period=calculate_period, mstar=mstar)
+		if print_details ==True:
+			print('Finished processing input data.')
+			print('----------------------------------')		
+
+	else:
 		print('----------------------------------')
+		print('----------------------------------')
+		print('----------------------------------')		
+		print('Please process input data.')
+		print('Ensure: planet numbers are sma-ordered.')
+		print('Radius in rearth and inclination in degrees.')
+		print('If your data needs no processing, please modify driver script to ensure smooth running.')
+		print('----------------------------------')
+		print('----------------------------------')
+		print('----------------------------------')						
+		break
+
 
 	# STEP 6 calculate signal for each planet and add to new column (choice - grazing or complete transit)
 	# do it here, so it can be taken for each observer in kobe_shadows
@@ -246,8 +271,8 @@ for index_files in range(iterations_files):
 	f.write('\n-------------------')
 	f.write('\nCurrent date and time : ')
 	f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
-	f.write('\nReading File : %s'%(files[index_files]))
-	f.write('\nDescription of original file: \nDataset = %s \nNumber of Systems = %d \nNumber of Planets =%d'%(dataset,df_input[col_system_pop].unique().shape[0],df_input.shape[0]))
+	f.write('\nModel = %s; Reading File : %s'%(model,files[index_files]))
+	f.write('\nDescription of original file: \nDataset = %s; (minimum mass threshold = %.2f) \nNumber of Systems = %d \nNumber of Planets =%d'%(dataset, mass_threshold,df_input[col_system_pop].unique().shape[0],df_input.shape[0]))
 	f.write('\nGrazing Transits Included: %s, Stars simulated = %e, Observation time = %.1f year.'%(str(grazing_transits), simulate_nstars,t_obs/365.25))
 	f.write('\nSystems analyzed = %d, Minimum Transits = %d, Minimum SNR (MES) = %.1f'%(break_after_system,minimum_transit,snr_threshold))
 	f.write('\nKOBE Shadows: \nNumber of Systems = %d \nNumber of Planets = %d'%(df_kobe_output['kobe_system_id'].unique().shape[0],df_kobe_output.shape[0]))
@@ -265,5 +290,5 @@ for index_files in range(iterations_files):
 print('KOBE is finished. Thanks, bye-bye!')
 print('Your output is stored at: %s.'%(output_directory))
 time_run = time.time() - time_start
-print("--- %.5f seconds ---" % (time_run))
-print("--- %.5f minutes ---" %(time_run/60))
+print("---Run time: %.5f seconds ---" % (time_run))
+print("---Run time: %.5f minutes ---" %(time_run/60))

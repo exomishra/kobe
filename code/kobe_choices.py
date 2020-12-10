@@ -12,23 +12,38 @@ print_fine_details = False
 #-----------------------------------------
 # directories, reading, input management/processing
 
+model = 'bern_model'
+# specify your model; option: 'bern_model', 'completo'
+# used for two purposes:
+# reading columns in kobe_columns
+# processing input via a suitable function
+# please define this function in kobe.py and modify kobe_driver accordingly
+
+dataset = 'ng76'
+# string label for the dataset
+# used for saving output
+
 input_directory = '/home/lokeshmishra/PaleBlueDot/BernPhD/Projects/datasets/bern_model_data/data_from_horus/NGPPS/playing_with_kobe/'
 # absolute path for input directories, ENDING WITH "/"
 # examples 
 # if on  horus cluster:'/shares/home0/lokeshmishra/simulated_data/NG76_1Msun_100emb_20Myr_0p3km_alpha2e-3_oldevap/'
 # local PC : '/home/lokeshmishra/PaleBlueDot/BernPhD/Projects/data/data_from_horus/NGPPS/NG76_1Msun_100emb_20Myr_0p3km_alpha2e-3_oldevap/'
 
-
-input_file = 'ref_red4e9.dat'
+input_file = 'ref_red5e9.dat'
 # input your filename
 # options: 'all' or name a particular file example 'ref_red4e9.dat'
 # 'all' mode is for internal use only
 # 'all' mode allows us to read all ref_red files in a directory
 
-time_age = '4e9'
+time_age = '5e9'
 # age of system, or None
 # example: 4e9, 5e5, 1000
 # if it throws an error, try using an age>2.3e7
+
+auxiliary_file = 'ref_red5e9.dat'
+# is none if all information is in input file
+# otherwise provide file name (ensure auxiliary file is input_directory)
+# this file is read only in your self-writted processing funtion
 
 calculate_period = True
 # if period needs to be calculated from sma
@@ -39,11 +54,11 @@ mstar_column = False
 # else --> False
 
 mstar = 1
-# provide mass of star in msun
-# options: constant float
+# provide mass of star in msun [float]
 # if mass of star varies in population, provide column of mstar (string or int)
+# note: column should have mstar in msun units. 
 
-output_directory = '/home/lokeshmishra/PaleBlueDot/BernPhD/Projects/datasets/bern_model_data/data_from_horus/NGPPS/playing_with_kobe/kobe_output/'
+output_directory = '/home/lokeshmishra/PaleBlueDot/BernPhD/Projects/datasets/bern_model_data/data_from_horus/NGPPS/playing_with_kobe/kobe_evo_output/'
 # absolute path for input directories, ENDING WITH "/"
 
 cdpp_file = '/home/lokeshmishra/PaleBlueDot/BernPhD/Projects/kobe_development/kobe_driver/stellar_data/keplerstellar.csv'
@@ -65,7 +80,7 @@ robovetter_file = '/home/lokeshmishra/PaleBlueDot/BernPhD/Projects/kobe_developm
 # Look for 'Robovetter Results', download table corresponding to inj1
 # Corresponding document -- J.L.  Coughlin  2017,Planet  Detection  Metrics:Robovetter Completeness and Effectiveness for Data Release 25, KSCI-19114-001
 
-mass_threshold = 0.1
+mass_threshold = 0
 # planets with mass < mass_threshold will be removed
 # reason: bern model starts embryos with 0.01 Me, so mass uncertainaty is high in low mass planets
 # we call them failed embryos. they will not be detected by a transit survey like Kepler, anyway
@@ -116,12 +131,8 @@ snr_threshold = 7.1
 # Following Kepler, we set the snr_threshold at 7.1
 # Following Weiss et. al., we set the snr threshold at 10. 
 
-break_after_system = 50
+break_after_system = 10
 # break_after = None
 # for debugging, we allow the calculations to stop after finishing with certain number of systems
 # break_after fixes that number.
 # if None, then there is no break!
-
-dataset = 'ng76'
-# string label for the dataset
-# used for saving output
