@@ -21,7 +21,7 @@ Essentially, we want to have a deeper and better understanding of the cosmos and
 
 **For Exoplanets:** In order to understand how planets are formed, we can simulate the environment in which they are born, namely - protoplanetary disks (check out these deeply moving and fabulous [images of protoplanetar disks from ALMA](https://www.almaobservatory.org/en/images/almas-high-resolution-images-of-nearby-protoplanetary-disks/)). Using theoretical and numerical calculations we can simulate and study the growth of several thousands of planets. 
 
-KOBE is a program which allows theoretically simulated planets to be compared with exoplanets found by the transit method. This allows us to [study so-many things](/images/house_dance.gif), statistically!
+KOBE is a program which allows theoretically simulated planets to be compared with exoplanets found by the transit method. This allows us to study so-many things, statistically!
 
 ## How does KOBE work?
 
@@ -36,9 +36,9 @@ Here are a few images of synthetic systems as their transit geometry is examined
 
 ## What can I use KOBE for?
 
-You can use KOBE for your studies! If you want to compare a theoretical population of planets with exoplanets found by a transit survey, you can use KOBE to bias your theoretical population. 
+You can use KOBE for your studies! 
 
-For more details, you can [contact me](https://www.lokeshmishra.com/).
+If you want to compare a theoretical population of planets with exoplanets found by a transit survey, you can use KOBE to bias your theoretical population. 
 
 ## Where does KOBE's name come from?
 
@@ -51,9 +51,7 @@ The way I imagined it was: that somehow the telescope Kepler was pointing at Ear
 ## Can KOBE be used for future missions? 
 
 Yes! 
-KOBE can be, **in-principle** used for other transit missions/surveys like: [PLATO](https://sci.esa.int/web/plato/), [TESS](https://tess.mit.edu/), [CHEOPS](https://cheops.unibe.ch/), [JWST](https://www.jwst.nasa.gov/),[NGTS](http://ngtransits.org/), [SAINT-EX](https://www.saintex.unibe.ch/), [ARIEL](https://arielmission.space/).
-
-For more details, you can [contact me](https://www.lokeshmishra.com/).
+KOBE can be, **in-principle** used for other transit missions/surveys like: [PLATO](https://sci.esa.int/web/plato/), [TESS](https://tess.mit.edu/), etc.
 
 ## Publications:
 
