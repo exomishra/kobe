@@ -57,8 +57,8 @@ KOBE can be, **in-principle** used for other transit missions/surveys like: [PLA
 
 List of publications utilizing KOBE:
 
-1. [Mishra et. al. 2020 (in prep)]  
-Original publication introducing KOBE. Analyze and comparing the architecture of theoretical planetary systems formed by the Bern Model, with the exoplanetary systems found by Kepler. [Read more about peas in a pod]()
+1. [Mishra et. al. 2021]  
+Original publication introducing KOBE. Analyze and comparing the architecture of theoretical planetary systems formed by the Bern Model, with the exoplanetary systems found by Kepler. [Read more about peas in a pod](https://ui.adsabs.harvard.edu/abs/2021arXiv210512745M/abstract)
 
 2. Mishra et. al. 2021 (in prep.)  
 Statistically comparing planetary populations from the Bern Model and exoplanets found by Kepler.
