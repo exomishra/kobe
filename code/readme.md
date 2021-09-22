@@ -1,7 +1,7 @@
 # How does KOBE work?
 
 ## The physical picture
-The physical aspect of KOBE is explained in detail in my paper [Mishra et. al. 2020 (in prep)](). Please see this paper for obtaining a physical understanding of how KOBE works.
+The physical aspect of KOBE is explained in detail in my paper [Mishra et. al. 2020](https://ui.adsabs.harvard.edu/abs/2021arXiv210512745M). Please see this paper for obtaining a physical understanding of how KOBE works.
 
 ## The computational aspect
 
