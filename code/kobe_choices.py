@@ -14,7 +14,7 @@ kobe_version = 2
 # takes the duty_cycle specific to telescope and uses detection efficiency for marking TCEs
 
 # Hereafter, the code can be used to specify choices as per the original first version of KOBE. After the choices for
-# KOBE 1.0 are specified, you can make additional choices. These are part of the KOBE upgrade - KOBE 2.0.
+# KOBE 1.0 are specified, you can make additional choices. These are part of the KOBE update - KOBE 2.0.
 
 ################ KOBE 1.0 ################
 
