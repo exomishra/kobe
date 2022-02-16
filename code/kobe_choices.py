@@ -8,8 +8,10 @@ kobe_version = 2
 # Read more about KOBE on https://github.com/exomishra/kobe
 
 # Key differences between KOBE 1.0 and 2.0: 
-# KOBE 1.0 assumes circular orbits, performs approximate calculation of the transit signal, calculates an average number of transits, takes duty_cycle (by default) of 100% and uses a SNR threshold of 7.1 for marking TCEs.
-# KOBE 2.0 accomodates eccentric orbits, makes precise transit signal calculations, improves calculation of number of transits and transit durations, takes the duty_cycle specific to telescope and uses detection efficiency for marking TCEs
+# KOBE 1.0 assumes circular orbits, performs approximate calculation of the transit signal, calculates an average number of transits, 
+# takes duty_cycle (by default) of 100% and uses a SNR threshold of 7.1 for marking TCEs.
+# KOBE 2.0 accomodates eccentric orbits, makes precise transit signal calculations, improves calculation of number of transits and transit durations, 
+# takes the duty_cycle specific to telescope and uses detection efficiency for marking TCEs
 
 # Hereafter, the code can be used to specify choices as per the original first version of KOBE. After the choices for
 # KOBE 1.0 are specified, you can make additional choices. These are part of the KOBE upgrade - KOBE 2.0.
