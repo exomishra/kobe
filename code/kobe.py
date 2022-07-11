@@ -984,13 +984,6 @@ def correct_system_planet_numbers(df_input, column_dictionary=None,col_system=No
 def kobe_shadows(df_input,cdpp):
     """
     The KOBE Shadows module: calculate transit shadow bands for all planets
-
-    NOTE
-    ----
-    1. the transit signal (rplanet/rstar)**2 is calculated in driver for all planets
-        because this remains same for all planets irrespective of observers
-
-    2. CDPP for each KOBE shadow system is sampled at end of this function
     
     Parameters
     ----------
@@ -1005,6 +998,13 @@ def kobe_shadows(df_input,cdpp):
 
     sanity_checklist : list
         list containing values for sanity checks in driver
+        
+    NOTE
+    ----
+    1. the transit signal (rplanet/rstar)**2 is calculated in driver for all planets
+        because this remains same for all planets irrespective of observers
+
+    2. CDPP for each KOBE shadow system is sampled at end of this function
 
     """
 
@@ -1170,7 +1170,7 @@ def kobe_transit_signal(df_kobe_output, include_ecc = include_ecc, grazing_trans
     """
     Defined with KOBE version 2.0
     
-    This function calculates the transit signal using exact analytic formulae as per eqn. 1, Mandel and Agol 2002.
+    This function calculates the transit signal using exact analytic formulae as per eqn. 1, Mandel and Agol (2002).
     
     Flags are: NT (no transit can be observed),
                GT (grazing transit),
@@ -1195,14 +1195,14 @@ def kobe_transit_signal(df_kobe_output, include_ecc = include_ecc, grazing_trans
        in KOBE 1.0. Without changes in driver, this function is used to update the transit signal
        in the function kobe_transits.
 
-    2. The Mandel and Agol 2002 paper accomodates grazing transits, but KOBE provides a choice for
+    2. The Mandel and Agol (2002) paper accomodates grazing transits, but KOBE provides a choice for
        inclusion/exclusion. Hence, signal will be set to 0 when grazing_transits is set to False in KOBE.
 
     """
     
     transit_signal_all = []
     
-    # Define the parameters size_ratio and norm_separation as in Mandel and Agol 2002
+    # Define the parameters size_ratio and norm_separation as in Mandel and Agol (2002)
     
     size_ratio = ((df_kobe_output[col_r_planet]/df_kobe_output[col_r_star])*(radius_earth/radius_sun))    
     distance_to_star = (df_kobe_output[col_sma]*sp_constants.astronomical_unit*(1-(df_kobe_output[col_ecc]**2)))/(1 + (df_kobe_output[col_ecc]*np.cos(df_kobe_output['kobe_observer_azimuth'])))
@@ -1218,7 +1218,7 @@ def kobe_transit_signal(df_kobe_output, include_ecc = include_ecc, grazing_trans
         norm_separation = (ar)*rho_c*np.cos(df_kobe_output['kobe_inclination'])  
         
     # Calculate transit signal as a function of the size ratio and impact parameter
-    # using analytical expressions from eqn. 1, Mandel and Agol 2002.
+    # using analytical expressions from eqn. 1, Mandel and Agol (2002).
     
     for p, z in zip(size_ratio, norm_separation):
         # case when planet will not transit for an observer
@@ -1231,7 +1231,7 @@ def kobe_transit_signal(df_kobe_output, include_ecc = include_ecc, grazing_trans
         elif abs(1-p)< z <= (1+p):
             
             if grazing_transits == True:
-                #Define k0 and k1 as per Eq 1, Mandel and Agol 2002
+                #Define k0 and k1 as per Eq 1, Mandel and Agol (2002)
                 k_0 = np.arccos((z**2 + p**2 - 1)/(2*z*p))
                 k_1 = np.arccos((z**2 - p**2 + 1)/(2*z))
                 transit_signal = ((p**2)*k_0 + k_1 - np.sqrt(((4*z**2)-(1 + z**2 - p**2)**2)/4))/np.pi
@@ -1276,15 +1276,7 @@ def totalduration_winn2010(df_kobe_output):
     Defined with KOBE version 2.0
     
     This function calculates the transit duration using eqn. 14 and eqn. 16 from Transits and Occultations,
-    Winn 2010.
-
-    NOTE
-    ----
-    1. The transit duration for the circular case is also calculated in Winn 2010.
-       Hence, if include_ecc is set to false, only eqn. 14 from Winn 2010 is used.
-    
-    2. To use this function in your calculation, set set t_dur_winn to True and t_contact_point to 0 in 
-       the kobe_choices file.
+    Winn (2010).
        
     Parameters
     ----------
@@ -1296,6 +1288,14 @@ def totalduration_winn2010(df_kobe_output):
     ------
     transit_duration : numpy array 
         array of values that are the calculated transit durations in hours
+
+    NOTE
+    ----
+    1. The transit duration for the circular case is also calculated in Winn (2010).
+       Hence, if include_ecc is set to false, only eqn. 14 from Winn (2010) is used.
+    
+    2. To use this function in your calculation, set set t_dur_winn to True and t_contact_point to 0 in 
+       the kobe_choices file.
 
     """
     
@@ -1326,15 +1326,7 @@ def fullduration_winn2010(df_kobe_output):
     Defined with KOBE version 2.0
     
     This function calculates the transit duration using eqn. 15 and eqn. 16 from Transits and Occultations,
-    Winn 2010.
-
-    NOTE
-    ----
-    1. The transit duration for the circular case is also calculated in Winn 2010.
-       Hence, if include_ecc is set to false, only eqn. 15 from Winn 2010 is used.
-       
-    2. To use this function in your calculation, set t_dur_winn to True and t_contact_point to 1 in 
-       the kobe_choices file.
+    Winn (2010).
     
     Parameters
     ----------
@@ -1347,6 +1339,14 @@ def fullduration_winn2010(df_kobe_output):
     transit_duration : numpy array 
         array of values that are the calculated transit durations in hours
 
+    NOTE
+    ----
+    1. The transit duration for the circular case is also calculated in Winn (2010).
+       Hence, if include_ecc is set to false, only eqn. 15 from Winn (2010) is used.
+       
+    2. To use this function in your calculation, set t_dur_winn to True and t_contact_point to 1 in 
+       the kobe_choices file.
+    
     """
     arg_periastron = (np.pi/2) - df_kobe_output['kobe_observer_azimuth']
     ar = (df_kobe_output[col_sma]*sp_constants.astronomical_unit)/(df_kobe_output[col_r_star]*radius_sun.value)
@@ -1375,6 +1375,17 @@ def transitduration_kipping2010(df_kobe_output):
     
     This function calculates the transit duration using eqn. 15 from Kipping (2010).
 
+    Parameters
+    ----------
+    df_kobe_output : pandas dataframe
+        dataframe of planets that transit (potentially detectable)
+        columns: all from input, some are added
+
+    Output 
+    ------
+    transit_duration : numpy array 
+        array of values that are the calculated transit durations in hours
+
     NOTE
     ----
     1. The transit duration for the circular case is not calculated in Kipping (2010) (only
@@ -1387,17 +1398,6 @@ def transitduration_kipping2010(df_kobe_output):
     3. To use this function in your calculation, set t_dur_kipping to True in 
        the kobe_choices file.
     
-    Parameters
-    ----------
-    df_kobe_output : pandas dataframe
-        dataframe of planets that transit (potentially detectable)
-        columns: all from input, some are added
-
-    Output 
-    ------
-    transit_duration : numpy array 
-        array of values that are the calculated transit durations in hours
-
     """
     arg_periastron = (np.pi/2) - df_kobe_output['kobe_observer_azimuth']
     eccentric_factor = (np.sqrt(1-((df_kobe_output[col_ecc])**2))/(1+(df_kobe_output[col_ecc]*np.sin(arg_periastron))))
@@ -1422,21 +1422,7 @@ def kobe_detection_efficiency(df_kobe_output, detection_efficiency):
     Defined with KOBE version 2.0
     
     This function marks the planets from KOBE Shadows catalogue as TCEs or not TCEs.
-    To perform this procedure, the 1D pipeline detection efficiency as defined in Planet Detection Metrics by
-    Jessie L. Christiansen 2017, is used.
-
-    NOTE
-    ----
-    1. The detection efficiency is calculated using a gamma cumulative distribution function, values of the 
-       coefficients taken directly from Christiansen 2017.
-       
-    2. Flag 'flag_det_eff' is created
-       '1' for planets which are tces
-       '-1' for planets which are not tces
-    
-    3. Detection efficiency is solely a function of the MES. For MES values greater than 50, all planets within
-       a bin are assigned a detection efficiency of 100%. Gamma CDF is used for MES ranging between 0 and 50.
-       This value of 50 can be changed in the function to define your bins differently (max_bin). 
+    To perform this procedure, the 1D pipeline detection efficiency as defined Christiansen (2017), is used.
     
     Parameters
     ----------
@@ -1453,6 +1439,19 @@ def kobe_detection_efficiency(df_kobe_output, detection_efficiency):
         as function of their MES, flagged as TCEs
         columns: all from input, some are added
     
+    NOTE
+    ----
+    1. The detection efficiency is calculated using a gamma cumulative distribution function, values of the 
+       coefficients taken directly from Christiansen (2017).
+       
+    2. Flag 'flag_det_eff' is created
+       '1' for planets which are tces
+       '-1' for planets which are not tces
+    
+    3. Detection efficiency is solely a function of the MES. For MES values greater than 50, all planets within
+       a bin are assigned a detection efficiency of 100%. Gamma CDF is used for MES ranging between 0 and 50.
+       This value of 50 can be changed in the function to define your bins differently (max_bin). 
+       
     """
     # Two flags are created. 
     # 'flag_det_eff' : '1' means planet is marked as a TCE. '-1' means planet is not marked as a TCE.
