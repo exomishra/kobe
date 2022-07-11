@@ -40,7 +40,7 @@ You can use KOBE for your studies!
 
 If you want to compare a theoretical population of planets with exoplanets found by a transit survey, you can use KOBE to bias your theoretical population. 
 
-Since its release, KOBE has undergone one update. We recommend using the updated version for studies that concern transit duration statistics and/or grazing transits. Several features that improve the accuracy of calculations and the resemblance of KOBE's performance to Kepler have also been introduced in the update. You can hand-pick the specifications most relevant to your work in kobe_choices. Read more on the differences between the versions [here]().
+Since its release, KOBE has undergone one update. We recommend using the updated version for studies that concern transit duration statistics and/or grazing transits. Several features that improve the accuracy of calculations and the resemblance of KOBE's performance to Kepler have also been introduced in the update. You can hand-pick the specifications most relevant to your work in kobe_choices. Read more on the differences between the versions [here](https://github.com/pratishtha-rawat/kobe/blob/master/code/kobe_versions.md).
 
 
 ## Where does KOBE's name come from?
@@ -68,4 +68,4 @@ Statistically comparing planetary populations from the Bern Model and exoplanets
 
 ## Contact me
 
-For any more details or comments or suggestions, you can contact me via [my website](https://www.lokeshmishra.com/). 
+For any more details or comments or suggestions, you can contact us via [this website](https://www.lokeshmishra.com/) or [this email](pratishtha12res@gmail.com). 
