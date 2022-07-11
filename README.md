@@ -68,4 +68,4 @@ Statistically comparing planetary populations from the Bern Model and exoplanets
 
 ## Contact me
 
-For any more details or comments or suggestions, you can contact us via [this website](https://www.lokeshmishra.com/) or [this email](mailto: pratishtha12res@gmail.com). 
+For any more details or comments or suggestions, you can contact us via [this website](https://www.lokeshmishra.com/) or [this email](mailto:pratishtha12res@gmail.com). 
