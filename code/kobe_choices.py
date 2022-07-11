@@ -2,24 +2,24 @@
 # idea: store various choices that are made for the running of the program here 
 # so that it can be conveniently be changed by the user afterwards.
 
-kobe_version = 2 
-# Set to 1 for KOBE 1.0 
-# Set to 2 for KOBE 2.0
-# Read more about KOBE on https://github.com/exomishra/kobe
+kobe_version = 1 
+# Set to 1 for using KOBE version 1, detailed on https://github.com/exomishra/kobe
+# Set to 2 for using KOBE version 2, detailed on https://github.com/pratishtha-rawat/kobe
 
-# Key differences between KOBE 1.0 and 2.0: 
-# KOBE 1.0 assumes circular orbits, performs approximate calculation of the transit signal, calculates an average number of transits, 
-# takes duty_cycle (by default) of 100% and uses a SNR threshold of 7.1 for marking TCEs.
-# KOBE 2.0 accomodates eccentric orbits, makes precise transit signal calculations, improves calculation of number of transits and transit durations, 
-# takes the duty_cycle specific to telescope and uses detection efficiency for marking TCEs
+# KOBE 1.0 can be particularly useful when you want to simulate the behavior of a transit survey and:
+# Approximate circular orbits 
+
+# KOBE 2.0 can be particularly useful when you want to simulate the behavior of a transit survey and:
+# accomodate eccentric orbits
+# include grazing transits 
+# conduct studies based on transit durations
+# include the behavior of the Kepler pipeline detection efficiency with SNR for marking TCEs
 
 # Hereafter, the code can be used to specify choices as per the original first version of KOBE. After the choices for
-# KOBE 1.0 are specified, you can make additional choices. These are part of the KOBE update - KOBE 2.0.
+# KOBE 1.0 are specified, you can make additional choices. These are part of the KOBE upgrade - KOBE 2.0.
 
 ################ KOBE 1.0 ################
 
-import sys
-sys.path.insert(0, 'C:/Users/PR/Desktop/Masters_thesis')
 print_details = True
 # True for debugging 
 # False for final running
@@ -76,7 +76,7 @@ mstar = 1
 # if mass of star varies in population, provide column of mstar (string or int)
 # note: column should have mstar in msun units. 
 
-output_directory = 'C:/Users/PR/Desktop/Masters_thesis/Output-V2/'
+output_directory = 'C:/Users/PR/Desktop/Masters_thesis/Output/'
 # absolute path for input directories, ENDING WITH "/"
 
 cdpp_file = 'C:/Users/PR/Desktop/Masters_thesis/keplerstellar.csv'
@@ -149,7 +149,7 @@ snr_threshold = 7.1
 # Following Kepler, we set the snr_threshold at 7.1
 # Following Weiss et. al., we set the snr threshold at 10. 
 
-break_after_system = None
+break_after_system = 10
 # break_after = None
 # for debugging, we allow the calculations to stop after finishing with certain number of systems
 # break_after fixes that number.
@@ -191,7 +191,7 @@ if kobe_version == 2:
     transit_signal_MA2002 = True
     # Define the transit signal that will be calculated precisely based on the impact parameter and size ratio
     # Model transit signal as per eq. 1, Mandel and Agol 2002
-    classify_signal = True
+    geo_condition_info = True
     # Each planet will satisfy a particular condition from the (1)-(4) in eq. 1, Mandel and Agol 2002
     # Set to true to get information on the condition satisfied, in the Output 'flag_transit_MA2002' column.
     # Flags are: NT (no transit can be observed), GT (grazing transit), FT (full transit can be observed) and 
@@ -201,7 +201,7 @@ if kobe_version == 2:
     # Marks potential transiting planets as TCEs based on detection efficiency, as defined 
     # and calculated in Christiansen, 2017
     # Flag is flag_det_eff with outputs '1' and '-1' for TCE and not TCE, respectively
-
+    
 elif kobe_version == 1:
     
     # Resets inputs given above to ensure only KOBE version 1.0 is run
@@ -212,5 +212,6 @@ elif kobe_version == 1:
     t_dur_kipping = False
     duty_cycle = False
     transit_signal_MA2002 = False
-    classify_signal = False
+    geo_condition_info = False
     detection_efficiency = False
+    
