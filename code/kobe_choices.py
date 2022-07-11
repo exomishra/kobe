@@ -2,7 +2,7 @@
 # idea: store various choices that are made for the running of the program here 
 # so that it can be conveniently be changed by the user afterwards.
 
-kobe_version = 1 
+kobe_version = 2 
 # Set to 1 for using KOBE version 1, detailed on https://github.com/exomishra/kobe
 # Set to 2 for using KOBE version 2, detailed on https://github.com/pratishtha-rawat/kobe
 
