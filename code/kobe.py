@@ -636,7 +636,7 @@ def process_input_bern(df_input, mass_threshold, calculate_period, mstar):
     # fix planets with negative sma (planets with sma less than 1e3 are put at 1e2)
     # note: 4e3 au is solar radii
     if df_input.loc[df_input[col_sma]<0].shape[0]>0:
-        print('Error: %d Planets found with SMA < 0 au. SMA replaced to 0.01 au.'%(df_input.loc[df_in[col_sma]<0][col_planet].unique().shape[0]))
+        print('Error: %d Planets found with SMA < 0 au. SMA replaced to 0.01 au.'%(df_input.loc[df_input[col_sma]<0][col_planet].unique().shape[0]))
     df_input = df_input.where(df_input[col_sma]>=0,other=10**-2)
 
     
@@ -738,7 +738,7 @@ def process_input_completo(df_input, mass_threshold, calculate_period, mstar):
     # fix planets with negative sma (planets with sma less than 1e3 are put at 1e2)
     # note: 4e3 au is solar radii
     if df_input.loc[df_input[col_sma]<0].shape[0]>0:
-        print('Error: %d Planets found with SMA < 0 au. SMA replaced to 0.01 au.'%(df_input.loc[df_in[col_sma]<0][col_planet].unique().shape[0]))
+        print('Error: %d Planets found with SMA < 0 au. SMA replaced to 0.01 au.'%(df_input.loc[df_input[col_sma]<0][col_planet].unique().shape[0]))
     df_input = df_input.where(df_input[col_sma]>=0,other=10**-2)
 
     
