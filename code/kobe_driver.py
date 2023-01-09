@@ -1,8 +1,11 @@
 """
-Created on Fri Dec 20 19:32:18 2019
+Created on Fri Nov 29, 2019
+Last Updated on Mon Jul 11, 2022
 
-@author: lokeshmishra
+@author: lokeshmishra, pratishtharawat
+
 """
+
 #-------------------------------------
 # Standard Imports
 import os
@@ -34,6 +37,7 @@ from mymodules import dataread, analysis, plottingroutine
 import kobe
 from kobe_choices import *
 from kobe_columns import *
+
 #-------------------------------------
 kobe.print_header()
 print('KOBE is working on %s.'%(model))
@@ -99,6 +103,8 @@ elif input_file != "all":
 ####################################
 # Step 1b: Read Stellar Data
 ####################################
+
+
 if print_details == True:
 	print('Started reading Kepler CDPP data.')
 	print('----------------------------------')
@@ -115,8 +121,8 @@ if print_details ==True:
 	print('Started reading Kepler completeness data.')
 	print('----------------------------------') 
 
-# To incoroporate reliability set dispscore_cutoff      = 0.9. 
-# To not incorporate reliability set dispscore_cutoff   = 0
+# To incorporate reliability set dispscore_cutoff      = 0.9 
+# To not incorporate reliability set dispscore_cutoff  = 0
 
 # load the ipac file which contains the kepler robovetter results, and turn into pandas dataframe
 df_robovetter = kobe.read_keplercompleteness(robovetter_file=robovetter_file)
@@ -159,7 +165,7 @@ for index_files in range(iterations_files):
 
 
 	# step 2 process the input
-	print('KOBE is procssing input file(s).')
+	print('KOBE is processing input file(s).')
 	print('----------------------------------')	
 	if model == 'bern_model':
 		df_input = kobe.process_input_bern(df_input= df_input,mass_threshold = mass_threshold, 
@@ -191,8 +197,8 @@ for index_files in range(iterations_files):
 	# STEP 6 calculate signal for each planet and add to new column (choice - grazing or complete transit)
 	# do it here, so it can be taken for each observer in kobe_shadows
 	df_input['transit_signal'] = ((df_input[col_r_planet]/df_input[col_r_star])*((radius_earth/radius_sun).value))**2
-	
 
+        
 	# apply cuts : radius, period, mass
 	# if your population has planets which need to be removed by cuts put them here 
 

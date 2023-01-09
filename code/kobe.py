@@ -1,7 +1,8 @@
 """
-Created on Fri Nov 29 14:38:18 2019
+Created on Fri Nov 29, 2019
+Last Updated on Mon Jul 11, 2022
 
-@author: lokeshmishra
+@author: lokeshmishra, pratishtharawat
 """
 
 # Standard Imports
@@ -24,11 +25,13 @@ sns.set()
 from scipy import constants as sp_constants
 from astropy import constants as astropy_constants
 from astropy import units as astropy_units
+from astropy import units as u
 
-
-# from mymodules import dataread, analysis, plottingroutine
+from mymodules import dataread, analysis
 from kobe_choices import *
 from kobe_columns import *
+
+from scipy import stats
 
 # SI units
 mass_sun = 1.9884*10**30
@@ -90,7 +93,7 @@ def rotation_matrix(axis, angle, invert=False):
     return rotation_matrix
 
 def calculate_shadows(df_input, system_id, npoints=1e7, 
- stellar_radius=None,seed=None, print_probability=True, grazing_transits=False):
+ stellar_radius=None,seed=None, print_probability=True, grazing_transits=grazing_transits):
     """
     This function calculates the transit shadow bands for all planets in a chosen system.
     
@@ -155,7 +158,8 @@ def calculate_shadows(df_input, system_id, npoints=1e7,
     series_long_peri = df_input.loc[df_input[col_system]==system_id][col_long_peri] #* astropy_units.rad
     series_arg_peri = series_long_peri - series_long_node
     # series_transitprob = df_input.loc[df_input[col_system]==system_id][col_transitprob]
-    
+
+
     # Step 1 - create grid on sphere
     r = 1                       # unit sphere
     if seed == None:
@@ -175,7 +179,7 @@ def calculate_shadows(df_input, system_id, npoints=1e7,
     ### SANITY TEST 1 ####
     #sanity check: norm of all vectors should be 1 (1 is True in bool)
     # check that the difference between norm of each vector and 1 is less than 1e-15. 
-    # If not replace it with 0 (0 is flase).
+    # If not replace it with 0 (0 is false).
     check_norm = np.where(abs(V_norm-1)<1e-15, V_norm, 0)
     if check_norm.all() == False:
         print('Sanity test 1 - FAILED. Not all vectors are unit normed. ')
@@ -185,10 +189,11 @@ def calculate_shadows(df_input, system_id, npoints=1e7,
     df_shadow_output = pd.DataFrame()
     df_shadow_output['theta'] = theta
     df_shadow_output['phi'] = phi
-
+    
     df_angle_data = pd.DataFrame()
     df_angle_data['theta'] = theta
     df_angle_data['phi'] = phi
+    
 
     # Step 2 - start loop over planets
     for index_planet in range(nplanets):
@@ -202,6 +207,8 @@ def calculate_shadows(df_input, system_id, npoints=1e7,
         v_prime = np.einsum('bc,ac',rotation_matrix('x',series_inc.iat[index_planet],invert=True),v_prime)
         v_prime = np.einsum('bc,ac',rotation_matrix('z',series_arg_peri.iat[index_planet],invert=True),v_prime)
         v_prime_norm = np.linalg.norm(v_prime, axis=1)
+        
+
         
         ### SANITY TEST 2 ####
         #sanity check: norm of all vectors should be 1 (1 is True in bool)
@@ -239,9 +246,9 @@ def calculate_shadows(df_input, system_id, npoints=1e7,
         
         # Step 2b - Calculate pairs of (f, alpha) inside shadow
         if grazing_transits == True:
-            height_shadow = ((r_star - series_r_planet.iat[index_planet])*(1 + series_ecc.iat[index_planet] * np.cos(f)))/((series_sma.iat[index_planet])*(1 - series_ecc.iat[index_planet]**2))
-        elif grazing_transits == False:
             height_shadow = ((r_star + series_r_planet.iat[index_planet])*(1 + series_ecc.iat[index_planet] * np.cos(f)))/((series_sma.iat[index_planet])*(1 - series_ecc.iat[index_planet]**2))
+        elif grazing_transits == False:
+            height_shadow = ((r_star - series_r_planet.iat[index_planet])*(1 + series_ecc.iat[index_planet] * np.cos(f)))/((series_sma.iat[index_planet])*(1 - series_ecc.iat[index_planet]**2))
         
         alpha_rad = np.arcsin(height_shadow)
         # for each f (true anomaly), we calculate the shadow band by calculating the min and max of shadow
@@ -296,7 +303,7 @@ def calculate_shadows(df_input, system_id, npoints=1e7,
 
 def read_keplercompleteness(robovetter_file):
     """
-    This function reads the IPAC file containing Keplar Simulated Robovetter Results.
+    This function reads the IPAC file containing Kepler Simulated Robovetter Results.
     
     Parameter
     ---------
@@ -977,13 +984,6 @@ def correct_system_planet_numbers(df_input, column_dictionary=None,col_system=No
 def kobe_shadows(df_input,cdpp):
     """
     The KOBE Shadows module: calculate transit shadow bands for all planets
-
-    NOTE
-    ----
-    1. the transit signal (rplanet/rstar)**2 is calculated in driver for all planets
-        because this remains same for all planets irrespective of observers
-
-    2. CDPP for each KOBE shadow system is sampled at end of this function
     
     Parameters
     ----------
@@ -998,6 +998,13 @@ def kobe_shadows(df_input,cdpp):
 
     sanity_checklist : list
         list containing values for sanity checks in driver
+        
+    NOTE
+    ----
+    1. the transit signal (rplanet/rstar)**2 is calculated in driver for all planets
+        because this remains same for all planets irrespective of observers
+
+    2. CDPP for each KOBE shadow system is sampled at end of this function
 
     """
 
@@ -1075,14 +1082,14 @@ def kobe_shadows(df_input,cdpp):
             df_kobe_output = df_kobe_output.append(df_input.loc[condition1].iloc[planet_indices,:],ignore_index=True,sort=False)
             # reorder the indices of this dataframe
             # df_kobe_output.index = np.arange(df_kobe_output.shape[0])
-            #
+            
 
             # read the inclination seen by kobe for the appended planets
             # numpy magic to extract separate arrays out of (f,alpha) array
             f_alpha_pairs = np.concatenate(df_angle_data.iloc[[index_system_views],2:].to_numpy()[0][planet_indices]).reshape(-1,2)
             f_array = np.take(f_alpha_pairs, indices=0,axis=1)
             alpha_array = np.take(f_alpha_pairs, indices=1,axis=1)
-
+            
             # note, observer's inclination is same as observer's location given by alpha (along polar)
             df_kobe_output.loc[df_kobe_output.tail(len(planet_indices)).index,'kobe_inclination'] = alpha_array 
             df_kobe_output.loc[df_kobe_output.tail(len(planet_indices)).index,'kobe_observer_azimuth'] = f_array
@@ -1090,11 +1097,13 @@ def kobe_shadows(df_input,cdpp):
             # give kobe system numbers and planet numbers
             df_kobe_output.loc[df_kobe_output.tail(len(planet_indices)).index,'kobe_system_id'] = nsystem_nonzero_views2*np.ones(len(planet_indices))
             df_kobe_output.loc[df_kobe_output.tail(len(planet_indices)).index,'kobe_planet_id'] = np.arange(len(planet_indices))+1
+            
             ####################################
             ####################################
             # KOBE TRANSIT Calculations
             ####################################
             ####################################
+            
             # step 7 draw CDPP, calculate SNR (for each remaining planet)
             df_kobe_output.loc[df_kobe_output.tail(len(planet_indices)).index,'kobe_cdpp [ppm]'] = np.random.choice(cdpp)*10**-6
             # get out of this loop to continue SNR calculations
@@ -1107,6 +1116,407 @@ def kobe_shadows(df_input,cdpp):
     
     return df_kobe_output, [nsystem_nonzero_views1,nsystem_nonzero_views2,nplanet_transiting]
 
+def calculate_ntransits_phase(df_kobe_output):
+    
+    """
+    Defined with KOBE version 2.0
+    
+    This function calculates the number of transits seen by an observer in a Monte-Carlo manner.
+    
+    Parameters
+    ----------
+    df_kobe_output : pandas dataframe
+        dataframe of planets that transit (potentially detectable)
+        columns: all from input, some are added
+
+    Output 
+    ------
+    number_transits : numpy array 
+        array of values that give the number of transits a planet will allow to be observed
+        in the survey duration
+
+    NOTE
+    ----
+    1. In the same KOBE Shadows system, planets are given the same phase at the time of observation.
+       Function updates the number of transits in the function kobe_transits.
+
+    """
+    # for each system in the KOBE-Shadows Catalogue, create an array 'thetas_system'
+    # which assigns one single random value of phase for each of the planets in that particular system  
+    number_systems = df_kobe_output['kobe_system_id'].unique().shape[0]
+    temp_df = df_kobe_output.groupby(['kobe_system_id']).size().reset_index(name='mul')
+    multiplicity = temp_df['mul']
+    listofones = np.split(np.ones(multiplicity.sum()), multiplicity.cumsum())
+    
+    # specify seed for reproducible results and randomize phase to a value in the interval (0,360) 
+    np.random.seed(42)
+    theta = 360*np.random.random(number_systems)
+    thetas = [x[0]*x[1] for x in zip(theta, listofones)]
+    thetas_system = np.concatenate(thetas)
+
+    # Calculate number of transits using an average angular speed, the survey duration 
+    # and the above calculated random value of phase for each of the planets.
+    # To account for the different positions planets might have in one system, use the true anomaly
+    ang_speed = 360/df_kobe_output[col_period]
+    ang_dist = ang_speed*t_obs
+    theta_phase = (thetas_system + (df_kobe_output['kobe_observer_azimuth']*180/np.pi))%360 + ang_dist
+    
+    number_transits = np.array(theta_phase/360)
+    
+    return number_transits
+
+def kobe_transit_signal(df_kobe_output, include_ecc = include_ecc, grazing_transits = grazing_transits, geo_condition_info = geo_condition_info):
+    
+    """
+    Defined with KOBE version 2.0
+    
+    This function calculates the transit signal using exact analytic formulae as per eqn. 1, Mandel and Agol (2002).
+    
+    Flags are: NT (no transit can be observed),
+               GT (grazing transit),
+               FT (full transit can be observed), and
+               Pdisk>*disk for planet disk larger than star's disk
+    
+    Parameters
+    ----------
+    df_kobe_output : pandas dataframe
+        dataframe of planets that transit (potentially detectable)
+        columns: all from input, some are added
+
+    Output 
+    ------
+    transit_signal_all : numpy array 
+        array of values that indicate the magnitude of transit signal that will be
+        calculated based on conditions a potentially detectable planet satisfies
+
+    NOTE
+    ----
+    1. the transit signal is calculated as (rplanet/rstar)**2 in driver for all planets
+       in KOBE 1.0. Without changes in driver, this function is used to update the transit signal
+       in the function kobe_transits.
+
+    2. The Mandel and Agol (2002) paper accomodates grazing transits, but KOBE provides a choice for
+       inclusion/exclusion. Hence, signal will be set to 0 when grazing_transits is set to False in KOBE.
+
+    """
+    
+    transit_signal_all = []
+    
+    # Define the parameters size_ratio and norm_separation as in Mandel and Agol (2002)
+    
+    size_ratio = ((df_kobe_output[col_r_planet]/df_kobe_output[col_r_star])*(radius_earth/radius_sun))    
+    distance_to_star = (df_kobe_output[col_sma]*sp_constants.astronomical_unit*(1-(df_kobe_output[col_ecc]**2)))/(1 + (df_kobe_output[col_ecc]*np.cos(df_kobe_output['kobe_observer_azimuth'])))
+    norm_separation = (distance_to_star*np.cos(df_kobe_output['kobe_inclination']))/(df_kobe_output[col_r_star]*radius_sun.value)
+    
+    # For calculation when circular orbit approximation is removed
+    arg_periastron = np.pi/2 - df_kobe_output['kobe_observer_azimuth']
+    
+    if include_ecc == True:
+        ar = (df_kobe_output[col_sma]*sp_constants.astronomical_unit)/(df_kobe_output[col_r_star]*radius_sun.value)
+        # Defining an extra variable ''rho_c' as per David M. Kipping, 2010
+        rho_c = (1-(df_kobe_output[col_ecc]**2))/(1+(df_kobe_output[col_ecc]*np.sin(arg_periastron)))
+        norm_separation = (ar)*rho_c*np.cos(df_kobe_output['kobe_inclination'])  
+        
+    # Calculate transit signal as a function of the size ratio and impact parameter
+    # using analytical expressions from eqn. 1, Mandel and Agol (2002).
+    
+    for p, z in zip(size_ratio, norm_separation):
+        # case when planet will not transit for an observer
+        if (1+p) < z:
+            transit_signal = 0
+            if geo_condition_info == True:
+                df_kobe_output['flag_transit_MA2002'] = 'NT'
+        
+        # case of grazing transit 
+        elif abs(1-p)< z <= (1+p):
+            
+            if grazing_transits == True:
+                #Define k0 and k1 as per Eq 1, Mandel and Agol (2002)
+                k_0 = np.arccos((z**2 + p**2 - 1)/(2*z*p))
+                k_1 = np.arccos((z**2 - p**2 + 1)/(2*z))
+                transit_signal = ((p**2)*k_0 + k_1 - np.sqrt(((4*z**2)-(1 + z**2 - p**2)**2)/4))/np.pi
+                if geo_condition_info == True:
+                    df_kobe_output['flag_transit_MA2002'] = 'GT'
+            # if grazing transits are not included, set signal to 0
+            elif grazing_transits == False:
+                transit_signal = 0
+                if geo_condition_info == True:
+                    df_kobe_output['flag_transit_MA2002'] = 'GT'
+        
+        # case when planet will fully transit for an observer
+        elif z <= (1-p):
+            transit_signal = p**2
+            if geo_condition_info == True:
+                df_kobe_output['flag_transit_MA2002'] = 'FT'
+        
+        # case when planet's sky-projected disk will completely obsure the sky-projected stellar disk 
+        elif z <= (p-1):
+            transit_signal = 1
+            if geo_condition_info == True:
+                df_kobe_output['flag_transit_MA2002'] = 'P$_{disk}$>*$_{disk}$'
+        transit_signal_all.append(transit_signal)
+    
+    if ((print_details == True) and (grazing_transits == False)):
+        print('----------------------------------')
+        print('Grazing transits is set to FALSE while using transit signal equations from Mandel and Agol, 2002.')
+        print('Hence, transit signals resulting from grazing transits are set to 0.')
+        print('----------------------------------')
+        
+    if ((print_details == True) and (grazing_transits == True)):
+        print('----------------------------------')
+        print('Grazing transits is set to TRUE while using transit signal equations from Mandel and Agol, 2002.')
+        print('Hence, transit signals resulting from grazing transits are calculated using analytical equations.')
+        print('----------------------------------')
+        
+    return np.array(transit_signal_all)
+
+def totalduration_winn2010(df_kobe_output):
+     
+    """
+    Defined with KOBE version 2.0
+    
+    This function calculates the transit duration using eqn. 14 and eqn. 16 from Transits and Occultations,
+    Winn (2010).
+       
+    Parameters
+    ----------
+    df_kobe_output : pandas dataframe
+        dataframe of planets that transit (potentially detectable)
+        columns: all from input, some are added
+
+    Output 
+    ------
+    transit_duration : numpy array 
+        array of values that are the calculated transit durations in hours
+
+    NOTE
+    ----
+    1. The transit duration for the circular case is also calculated in Winn (2010).
+       Hence, if include_ecc is set to false, only eqn. 14 from Winn (2010) is used.
+    
+    2. To use this function in your calculation, set set t_dur_winn to True and t_contact_point to 0 in 
+       the kobe_choices file.
+
+    """
+    
+    arg_periastron = (np.pi/2) - df_kobe_output['kobe_observer_azimuth']
+    
+    ar = (df_kobe_output[col_sma]*sp_constants.astronomical_unit)/(df_kobe_output[col_r_star]*radius_sun.value)
+
+    
+    # Defining an extra variable ''rho_c' as per David M. Kipping, 2010
+    rho_c = (1-(df_kobe_output[col_ecc]**2))/(1+(df_kobe_output[col_ecc]*np.sin(arg_periastron)))
+    b = (ar)*rho_c*np.cos(df_kobe_output['kobe_inclination'])
+    
+    # Assigning required values to new variables
+    # The ratio Rp/Rs, labelled 'k' as per Winn (2010)
+    k = ((df_kobe_output[col_r_planet]/df_kobe_output[col_r_star])*(radius_earth/radius_sun))
+    exp1 = (df_kobe_output[col_r_star]*radius_sun.value)/(df_kobe_output[col_sma]*sp_constants.astronomical_unit*np.sin(df_kobe_output['kobe_inclination']))
+    exp2 = np.sqrt((1+k**2)-b**2)
+    
+    transit_dur = (df_kobe_output[col_period]/np.pi)*np.arcsin(exp1*exp2)
+    
+    transit_duration = transit_dur*24/(1*u.radian)
+    
+    return transit_duration      
+
+def fullduration_winn2010(df_kobe_output):
+    
+    """
+    Defined with KOBE version 2.0
+    
+    This function calculates the transit duration using eqn. 15 and eqn. 16 from Transits and Occultations,
+    Winn (2010).
+    
+    Parameters
+    ----------
+    df_kobe_output : pandas dataframe
+        dataframe of planets that transit (potentially detectable)
+        columns: all from input, some are added
+
+    Output 
+    ------
+    transit_duration : numpy array 
+        array of values that are the calculated transit durations in hours
+
+    NOTE
+    ----
+    1. The transit duration for the circular case is also calculated in Winn (2010).
+       Hence, if include_ecc is set to false, only eqn. 15 from Winn (2010) is used.
+       
+    2. To use this function in your calculation, set t_dur_winn to True and t_contact_point to 1 in 
+       the kobe_choices file.
+    
+    """
+    arg_periastron = (np.pi/2) - df_kobe_output['kobe_observer_azimuth']
+    ar = (df_kobe_output[col_sma]*sp_constants.astronomical_unit)/(df_kobe_output[col_r_star]*radius_sun.value)
+    
+    # Defining an extra variable ''rho_c' as per David M. Kipping, 2010
+    rho_c = (1-(df_kobe_output[col_ecc]**2))/(1+(df_kobe_output[col_ecc]*np.sin(arg_periastron)))
+    
+    b = (ar)*rho_c*np.cos(df_kobe_output['kobe_inclination'])
+    
+    # Assigning required values to new variables
+    # The ratio Rp/Rs, labelled 'k' as per Winn (2010)
+    k = ((df_kobe_output[col_r_planet]/df_kobe_output[col_r_star])*(radius_earth/radius_sun))
+    exp1 = (df_kobe_output[col_r_star]*radius_sun.value)/(df_kobe_output[col_sma]*sp_constants.astronomical_unit*np.sin(df_kobe_output['kobe_inclination']))
+    exp2 = np.sqrt((1-k**2)-b**2)
+    
+    transit_dur = (df_kobe_output[col_period]/np.pi)*np.arcsin(exp1*exp2)
+    
+    transit_duration = transit_dur*24/(1*u.radian)
+    
+    return transit_duration      
+
+def transitduration_kipping2010(df_kobe_output):
+    
+    """
+    Defined with KOBE version 2.0
+    
+    This function calculates the transit duration using eqn. 15 from Kipping (2010).
+
+    Parameters
+    ----------
+    df_kobe_output : pandas dataframe
+        dataframe of planets that transit (potentially detectable)
+        columns: all from input, some are added
+
+    Output 
+    ------
+    transit_duration : numpy array 
+        array of values that are the calculated transit durations in hours
+
+    NOTE
+    ----
+    1. The transit duration for the circular case is not calculated in Kipping (2010) (only
+       displayed as a result of other papers).
+       Hence, if include_ecc is set to false, an issue is raised.
+       
+    2. The above does not mean eqn. 15, Kipping (2010) cannot handle a circular case. But to 
+       do so, one would have to overwrite the actual eccentricities of planets with value 0.
+       
+    3. To use this function in your calculation, set t_dur_kipping to True in 
+       the kobe_choices file.
+    
+    """
+    arg_periastron = (np.pi/2) - df_kobe_output['kobe_observer_azimuth']
+    eccentric_factor = (np.sqrt(1-((df_kobe_output[col_ecc])**2))/(1+(df_kobe_output[col_ecc]*np.sin(arg_periastron))))
+    
+    # Defining an extra variable ''rho_c' as per David M. Kipping, 2010
+    rho_c = (1-(df_kobe_output[col_ecc]**2))/(1+(df_kobe_output[col_ecc]*np.sin(arg_periastron)))
+    ar = (df_kobe_output[col_sma]*sp_constants.astronomical_unit)/(df_kobe_output[col_r_star]*radius_sun.value)
+    
+    b = (ar)*rho_c*np.cos(df_kobe_output['kobe_inclination'])
+    exp = (np.sqrt(1 - b*b))/(ar*rho_c*np.sin(df_kobe_output['kobe_inclination']))
+    delta_f = np.arcsin(exp)
+    t1 = df_kobe_output[col_period]/np.pi
+    t2 = rho_c**2/(np.sqrt(1 - df_kobe_output[col_ecc]*df_kobe_output[col_ecc]))
+   
+    transit_duration = t1*t2*delta_f*24
+    
+    return transit_duration
+
+def kobe_detection_efficiency(df_kobe_output, detection_efficiency):
+
+    """
+    Defined with KOBE version 2.0
+    
+    This function marks the planets from KOBE Shadows catalogue as TCEs or not TCEs.
+    To perform this procedure, the 1D pipeline detection efficiency as defined Christiansen (2017), is used.
+    
+    Parameters
+    ----------
+    df_input : pandas dataframe
+        input dataframe processed suitably 
+    
+    detection_efficiency : a boolean input to be specified in the file kobe_choices
+         set to True for using the detection efficiency for marking TCEs
+         
+    Output 
+    ------
+    df_kobe_output : pandas dataframe
+        dataframe of all KOBE Shadows planets that can be recovered by the Kepler pipeline 
+        as function of their MES, flagged as TCEs
+        columns: all from input, some are added
+    
+    NOTE
+    ----
+    1. The detection efficiency is calculated using a gamma cumulative distribution function, values of the 
+       coefficients taken directly from Christiansen (2017).
+       
+    2. Flag 'flag_det_eff' is created
+       '1' for planets which are tces
+       '-1' for planets which are not tces
+    
+    3. Detection efficiency is solely a function of the MES. For MES values greater than 50, all planets within
+       a bin are assigned a detection efficiency of 100%. Gamma CDF is used for MES ranging between 0 and 50.
+       This value of 50 can be changed in the function to define your bins differently (max_bin). 
+       
+    """
+    # Two flags are created. 
+    # 'flag_det_eff' : '1' means planet is marked as a TCE. '-1' means planet is not marked as a TCE.
+    
+    ## 0 - create arrays to go through each bin       
+    ## 1 - sanity checks
+    drop_c=0
+    drop1_c=0
+    
+    ## Create Columns 
+    ## 1 create columns and mark each as '1'. This ensures that all potential planets with MES>50 are marked TCEs.
+    df_kobe_output['flag_det_eff'] = 1
+    ## then all planets that are not tce are marked with -1
+    
+    ## select bin width, the MES threshold after which potential planets are marked TCEs
+    min_bin = 0
+    max_bin = 50
+    bin_wid = 0.5
+    n_bins = ((max_bin - min_bin)/bin_wid)
+    
+    for i in np.arange(min_bin, max_bin, bin_wid):
+        min_mes = i
+        max_mes = min_mes + 0.5
+        
+        #select all planets that fall within the bin (min_mes, max_mes)
+        df_bin = df_kobe_output.loc[df_kobe_output['kobe_mes']>=min_mes].loc[df_kobe_output['kobe_mes']<max_mes]    
+        
+        for mes in df_bin['kobe_mes']:
+        ## 2 now we are inside a bin
+        ## Gamma CDF calculation and coefficients taken directly from Christiansen 2017
+            
+            a = 30.87
+            b = 0.271
+            c = 0.94
+            mid_bin = (np.amax(df_bin['kobe_mes'])+np.amin(df_bin['kobe_mes']))/2
+            detection_eff = c*stats.gamma.cdf(mid_bin, a, scale = b)
+            
+        drop_ratio_c = 1 - detection_eff
+            
+        ## all planets that fall into current bin are selected
+
+        condition = (df_kobe_output['kobe_mes']>=min_mes) & (df_kobe_output['kobe_mes']< max_mes)
+        planet_index = df_kobe_output.loc[condition].index.to_numpy()
+
+        ## estimate number of planets to flag
+        drop_planets_size_c = int(np.floor(drop_ratio_c*planet_index.shape[0]))
+        drop_c = drop_c + drop_planets_size_c
+
+        
+        ## now we randomly select planets within this bin which are not flagged as TCEs
+        if planet_index.shape[0] != 0:
+            drop_planets_index_c = list(np.random.choice(planet_index,size=drop_planets_size_c,replace=False))
+            df_kobe_output.loc[drop_planets_index_c,'flag_det_eff'] = -1
+            drop1_c = drop1_c + len(drop_planets_index_c)
+
+    if print_details == True:
+        print('----------------------------------')
+        print('For identifying consistent TCEs, bins distributed between MES value of %d and %d'%(min_bin, max_bin))
+        print('Number of bins along given MES range: ', n_bins) 
+        print('Detection Efficiency Calculation Information: \nDetection efficiency ranges from 0-1 \nDetection efficiency flagged as -1 when not a TCE \nSpacing is %.1f \n'%(bin_wid))
+        print('----------------------------------')
+    
+    return df_kobe_output
+
+
 def kobe_transits(df_kobe_output):
     """
     The KOBE Transits module: calculate transit related parameters for all planets
@@ -1115,24 +1525,140 @@ def kobe_transits(df_kobe_output):
     ----------
     df_input : pandas dataframe
         input dataframe processed suitably
-
+    
+    Output 
+    ------
+    df_kobe_output : pandas dataframe
+        dataframe of all KOBE Shadows planets with transit-related parameters are calculated
+        columns: all from input, some are added
+    
     """
 
+    # Assigning required values to variables
+    # Argument of periastron
+    arg_periastron = np.pi/2 - df_kobe_output['kobe_observer_azimuth']
+    
     # Calculate impact parameter for each planet with respect to the observer
     # we use observer's azimuth as true anomaly --> implies that planet is crossing observer's azimuth
     # we use observer's polar angle as inclination --> identical by definition
     distance_to_star = (df_kobe_output[col_sma]*sp_constants.astronomical_unit*(1-(df_kobe_output[col_ecc]**2)))/(1 + (df_kobe_output[col_ecc]*np.cos(df_kobe_output['kobe_observer_azimuth'])))
     df_kobe_output['impact_parameter'] = (distance_to_star * np.cos(df_kobe_output['kobe_inclination']))/(df_kobe_output[col_r_star]*radius_sun.value)
-
+    
+    # Include the effect of eccentricity and calculate impact parameter accordingly 
+    if include_ecc == True:
+        # Defining an extra variable 'rho_c' as per David M. Kipping, 2010
+        # eccentric_factor = (np.sqrt(1-((df_kobe_output[col_ecc])**2))/(1+(df_kobe_output[col_ecc]*np.sin(arg_periastron))))
+        rho_c = (1-(df_kobe_output[col_ecc]**2))/(1+(df_kobe_output[col_ecc]*np.sin(arg_periastron)))
+        ar = (df_kobe_output[col_sma]*sp_constants.astronomical_unit)/(df_kobe_output[col_r_star]*radius_sun.value)
+        df_kobe_output['impact_parameter'] = (ar)*rho_c*np.cos(df_kobe_output['kobe_inclination'])
+        
+    
     # geometrically, transits occur if impact parameter (sky projected distance of planet from star in stellar radius unit) is less than the sum of planet and stellar radii in stellar radius unit
-    # we calculate the this geometric qunatity
+    # we calculate this geometric quantity
     df_kobe_output['rp+rs/rs'] = 1 + ((df_kobe_output[col_r_planet]/df_kobe_output[col_r_star])*(radius_earth/radius_sun))
 
+    # KOBE 1.0
+    # characteristic transit duration : eq 19, Winn (2010)
+    if kobe_version == 1:
+        df_kobe_output['transit_duration [hours]'] = ((df_kobe_output[col_r_star]*radius_sun.value)*(df_kobe_output[col_period]*24))/((np.pi)*(df_kobe_output[col_sma]*sp_constants.astronomical_unit))
+    
+    # calculate transit duration using other expressions, as per specification
+    
+    # Choice 1: using equations from Winn (2010)
+    if t_dur_winn == True:
+        
+        # Choice 1a : using eq 14, Winn (2010)
+        if ((t_contact_point == 0) and (kobe_version == 2)):
+            df_kobe_output['transit_duration [hours]'] = totalduration_winn2010(df_kobe_output)
+            # Further, if considering eccentric orbits, additional factor needs to be multiplied
+            # Factor from eq 16, Winn (2010)
+            if include_ecc == True:
+                eccentric_factor = (np.sqrt(1-((df_kobe_output[col_ecc])**2))/(1+(df_kobe_output[col_ecc]*np.sin(arg_periastron))))
+                df_kobe_output['transit_duration [hours]'] = eccentric_factor*totalduration_winn2010(df_kobe_output)
+         
+        # Choice 1b : using eq 15, Winn (2010)
+        if ((t_contact_point == 1) and (kobe_version == 2)):
+            df_kobe_output['transit_duration [hours]'] = fullduration_winn2010(df_kobe_output)
+            # Further, if considering eccentric orbits, additional factor needs to be multiplied
+            # Factor from eq 16, Winn (2010)
+            if include_ecc == True:
+                eccentric_factor = (np.sqrt(1-((df_kobe_output[col_ecc])**2))/(1+(df_kobe_output[col_ecc]*np.sin(arg_periastron))))
+                df_kobe_output['transit_duration [hours]'] = eccentric_factor*fullduration_winn2010(df_kobe_output)
+        
+    # Choice 2 : using eq 15, Investigations of approximate expressions for the transit duration by David M. Kipping, 2010
+    # Defining an extra variable ''rho_c' as per David M. Kipping, 2010
+        
+    if ((t_dur_kipping == True) and (kobe_version == 2)):
+        df_kobe_output['transit_duration [hours]'] = transitduration_kipping2010(df_kobe_output)
+        # Kipping (2010) formula incorporates eccentricity in its equation, hence a problem is recorded if 
+        # eccentricity is not included. It will simply assume e=0 and proceed if include_ecc is False.
+        if include_ecc == False:
+            print('Problem encountered! Transit Duration in eqn. 15 of Kipping (2010) is not approximated for circular orbits!')
+            print('To proceed, set include_ecc to true or choose a different expression')
+    
+    # effective cdpp for transit duration. Following, eq 4, Christiansen et. al. 2012.
+    df_kobe_output['kobe_cdpp_eff [ppm]'] = df_kobe_output['kobe_cdpp [ppm]']*((t_cdpp/df_kobe_output['transit_duration [hours]'])**0.5)
+   
+    # snr for 1 transit, or SES - single event statistic
+    if transit_signal_MA2002 == True:
+        df_kobe_output['transit_signal'] = kobe_transit_signal(df_kobe_output = df_kobe_output, include_ecc = include_ecc, grazing_transits = grazing_transits, geo_condition_info = geo_condition_info)
+    
+    df_kobe_output['kobe_ses'] = np.divide(df_kobe_output['transit_signal'], df_kobe_output['kobe_cdpp_eff [ppm]'])
+   
+    # calculate number of transits that will be observed by kobe
+    if average_transits == True:
+        df_kobe_output['number_transits'] = t_obs/df_kobe_output[col_period]
+    
+    # KOBE 2.0
+    # calculate number of transits that will be observed by kobe using phase calculations
+    # consider a random phase shift to accomodate that the observer does not observe the system
+    # exactly when the transit occurs
+    if average_transits == False:
+        df_kobe_output['number_transits'] = calculate_ntransits_phase(df_kobe_output)
+        
+        # Depending on the telescope, there is a fraction of observing time with valid observations
+        # Include the effect of only fraction of valid observations by multiplying with that fraction here
+        # For Kepler, this percentage is 88% (f_duty = 0.88) as per Burke et al., 2015. Specified in kobe_choices.
+        if duty_cycle == True:
+            df_kobe_output['number_transits'] = f_duty*calculate_ntransits_phase(df_kobe_output)
+            
+        
+    # Finally, snr(multi) or MES - multiple event statistic
+    df_kobe_output['kobe_mes'] = df_kobe_output['kobe_ses']*(df_kobe_output['number_transits']**0.5)
+
+                
+    ####################################
+    ####################################
+    # KOBE - tce
+    ####################################
+    ####################################
+    # those planets which satisfy the following two conditions:
+    # 1) number transits >= minimum_transits (currently at 3)
+    # 2) for KOBE 1.0:
+    #        kobe_mes >= snr_threshold 
+    #        are flagged as kobe_tce (i.e. kobe_threshold crossing events): 1 means yes tce, and 0 means no tce.
+    #    for KOBE 2.0:
+    #        for c% detection efficiency (as calculated in Christiansen 2017) in a kobe_mes bin, 
+    #        c% planets with kobe_mes in the bin
+    #        are flagged as kobe_tce (i.e. kobe_threshold crossing events): 1 means yes tce, and 0 means no tce.
+    
+    df_kobe_output['kobe_tce'] = 0
+    
+    if detection_efficiency == False:
+        condition_tce = (df_kobe_output['number_transits']>=minimum_transit) & (df_kobe_output['kobe_mes']>=snr_threshold)
+        df_kobe_output.loc[df_kobe_output.loc[condition_tce].index, 'kobe_tce'] = 1
+        
+    if (kobe_version == 2) and (detection_efficiency == True):
+        df_kobe_output = kobe_detection_efficiency(df_kobe_output = df_kobe_output, detection_efficiency = detection_efficiency)
+        condition_tce = (df_kobe_output['number_transits']>=minimum_transit) & (df_kobe_output['flag_det_eff'] == 1)
+        df_kobe_output.loc[df_kobe_output.loc[condition_tce].index, 'kobe_tce'] = 1
+        
     ## Any observer inside the transit shadow caused by a planet, is bound to see this planet's transit.
-    # The geometric condition for transit is that the imapact parameter should be smaller than 'rp+rs/rs'. It should be true for all of the planets in kobe_output
+    # The geometric condition for transit is that the impact parameter should be smaller than 'rp+rs/rs'. It should be true for all of the planets in kobe_output
     # We check this by counting how many fail this condition. 
     # first count planets that don't satisfy this strongly condition
-    # I'm checking this on absolutue, to ensure that all planets are checked!
+    # I'm checking this on absolute, to ensure that all planets are checked!
+    
     condition_geotransit = abs(df_kobe_output['impact_parameter']) > df_kobe_output['rp+rs/rs']
     failed_planets = df_kobe_output.loc[condition_geotransit].shape[0]
     if failed_planets != 0:
@@ -1150,37 +1676,11 @@ def kobe_transits(df_kobe_output):
         print('Weak Condition == b =< (rs+rp)/rs')
         print('!!!!!!!!!!!!!')
 
-    # characteristic transit duration : eq 19, Transits and Occultations by J. Winn in Exoplanets
-    df_kobe_output['transit_duration [hours]'] = ((df_kobe_output[col_r_star]*radius_sun.value)*(df_kobe_output[col_period]*24))/((np.pi)*(df_kobe_output[col_sma]*sp_constants.astronomical_unit))
-    # effective cdpp for transit duration. Following, eq 4, Christiansen et. al. 2012.
-    df_kobe_output['kobe_cdpp_eff [ppm]'] = df_kobe_output['kobe_cdpp [ppm]']*((t_cdpp/df_kobe_output['transit_duration [hours]'])**0.5)
-    # snr for 1 transit, or SES - single event statistic
-    df_kobe_output['kobe_ses'] = df_kobe_output['transit_signal']/df_kobe_output['kobe_cdpp_eff [ppm]']
-
-    # calculate number of transits that will be observed by kobe
-    df_kobe_output['number_transits'] = t_obs/df_kobe_output[col_period]
-    # Finally, snr(multi) or MES - multiple event statistic
-    df_kobe_output['kobe_mes'] = df_kobe_output['kobe_ses']*((df_kobe_output['number_transits'])**0.5)
-
-
-    ####################################
-    ####################################
-    # KOBE - tce
-    ####################################
-    ####################################
-    # those planets which satisfy the following two conditions:
-    # number transits >= minimum_transits (currently at 3)
-    # kobe_mes >= snr_threshold
-    # are flagged as kobe_tce (i.e. kobe_threshold crossing events): 1 means yes tce, and 0 means no tce.
-    df_kobe_output['kobe_tce'] = 0
-    condition_tce = (df_kobe_output['number_transits']>=minimum_transit) & (df_kobe_output['kobe_mes']>=snr_threshold)
-    df_kobe_output.loc[df_kobe_output.loc[condition_tce].index, 'kobe_tce'] = 1
-
     return df_kobe_output
 
 def kobe_vetter(df_kobe_output,kepler_completeness):
     """
-    The KOBE Vetter module: applies Kepler completenes.
+    The KOBE Vetter module: applies Kepler completeness.
 
     Parameters
     ----------
@@ -1263,6 +1763,7 @@ def kobe_vetter(df_kobe_output,kepler_completeness):
 
     return df_kobe_output
 
+
 def print_header():
     """
     """
@@ -1289,9 +1790,10 @@ def print_header():
      -----------------------------------------------------------------------------------------
      Code: Kepler Observes Bern Exoplanets
      Starting date: 25.10.2019
-     Last edit date: 09.12.2020
-     Author: Lokesh Mishra (University of Bern & Geneva Observatory)
-     Contact: www.lokeshmishra.com
+     Last edit date: 11.07.2022
+     Authors: Lokesh Mishra (University of Bern & Geneva Observatory)
+              Pratishtha Rawat (Geneva Observatory)
+     Contact: www.lokeshmishra.com or pratishtha-rawat.github.io
      -----------------------------------------------------------------------------------------
      -----------------------------------------------------------------------------------------"""
 

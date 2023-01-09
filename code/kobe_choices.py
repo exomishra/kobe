@@ -2,6 +2,24 @@
 # idea: store various choices that are made for the running of the program here 
 # so that it can be conveniently be changed by the user afterwards.
 
+kobe_version = 2 
+# Set to 1 for using KOBE version 1, detailed on https://github.com/exomishra/kobe
+# Set to 2 for using KOBE version 2, detailed on https://github.com/pratishtha-rawat/kobe
+
+# KOBE 1.0 can be particularly useful when you want to simulate the behavior of a transit survey and:
+# Approximate circular orbits 
+
+# KOBE 2.0 can be particularly useful when you want to simulate the behavior of a transit survey and:
+# accomodate eccentric orbits
+# include grazing transits 
+# conduct studies based on transit durations
+# include the behavior of the Kepler pipeline detection efficiency with SNR for marking TCEs
+
+# Hereafter, the code can be used to specify choices as per the original first version of KOBE. After the choices for
+# KOBE 1.0 are specified, you can make additional choices. These are part of the KOBE upgrade - KOBE 2.0.
+
+################ KOBE 1.0 ################
+
 print_details = True
 # True for debugging 
 # False for final running
@@ -23,7 +41,7 @@ dataset = 'ng76'
 # string label for the dataset
 # used for saving output
 
-input_directory = '/home/lokeshmishra/PaleBlueDot/BernPhD/Projects/datasets/bern_model_data/data_from_horus/NGPPS/playing_with_kobe/'
+input_directory = 'C:/Users/PR/Desktop/Masters_thesis/'
 # absolute path for input directories, ENDING WITH "/"
 # examples 
 # if on  horus cluster:'/shares/home0/lokeshmishra/simulated_data/NG76_1Msun_100emb_20Myr_0p3km_alpha2e-3_oldevap/'
@@ -58,10 +76,10 @@ mstar = 1
 # if mass of star varies in population, provide column of mstar (string or int)
 # note: column should have mstar in msun units. 
 
-output_directory = '/home/lokeshmishra/PaleBlueDot/BernPhD/Projects/datasets/bern_model_data/data_from_horus/NGPPS/playing_with_kobe/kobe_evo_output/'
+output_directory = 'C:/Users/PR/Desktop/Masters_thesis/Output/'
 # absolute path for input directories, ENDING WITH "/"
 
-cdpp_file = '/home/lokeshmishra/PaleBlueDot/BernPhD/Projects/kobe_development/kobe_driver/stellar_data/keplerstellar.csv'
+cdpp_file = 'C:/Users/PR/Desktop/Masters_thesis/keplerstellar.csv'
 # absolute path to kepler stellar cdpp data
 # Download "Robust RMS CDPP" (preferably in csv format) from
 # https://exoplanetarchive.ipac.caltech.edu/docs/Kepler_completeness_reliability.html
@@ -74,7 +92,7 @@ t_cdpp = 6
 # Weiss et. al. 2018 calculations proceed with t_cdpp = 6 hours. 
 
 
-robovetter_file = '/home/lokeshmishra/PaleBlueDot/BernPhD/Projects/kobe_development/kobe_driver/stellar_data/kepler_simulated_robovetterresults.txt'
+robovetter_file = 'C:/Users/PR/Desktop/Masters_thesis/kepler_simulated_robovetterresults.txt'
 # absolute path to Planet Detection Metrics: Vetting Metrics for Data Release 25
 # Obtain from: https://exoplanetarchive.ipac.caltech.edu/docs/KeplerSimulated.html
 # Look for 'Robovetter Results', download table corresponding to inj1
@@ -136,3 +154,64 @@ break_after_system = 10
 # for debugging, we allow the calculations to stop after finishing with certain number of systems
 # break_after fixes that number.
 # if None, then there is no break!
+
+################ KOBE 2.0 ################
+
+if kobe_version == 2:
+    
+    include_ecc = True 
+    # Eccentricity of orbit is factored in.
+    # the simplification considering circular orbits is removed.
+    # False if you wish to run KOBE 1.0 only.
+    
+    average_transits = False
+    # Default is True - calculates the number of transits using an average formula, as in Mishra et al., 2021 (n_transits = t_survey/P)
+    # Set to False for calculating the number of transits using the phase of planet for improving the estimate of number of transits
+    
+    # Make internal choices for using specific expressions of the transit duration 
+    t_dur_winn = False
+    # set to true for using equations from Transits and Occultations by J. Winn in Exoplanets, 2010
+    # Further, make the choice for using one of the specific set of expressions for the transit duration from 
+    # Transits and Occultations by J. Winn in Exoplanets. See Figure 2 of the paper for more.
+    t_contact_point = 0
+    # Specify '0' for taking transit duration from contact point 4 to 1, labelled Total duration in paper
+    # Specify '1' for taking transit duration from contact point 3 to 2, labelled Full duration in paper
+
+    # set to true for using eq 15, Investigations of approximate expressions for the transit duration by David M. Kipping, 2010
+    t_dur_kipping = True
+    
+    duty_cycle = True
+    # The observing duty cycle is the fraction of t_obs with valid observations. 
+    # Incorporate the effect of duty_cycle to calculate the valid number of transits by multiplying with f_duty
+    f_duty = 0.88
+    # f_duty parameter sets the duty cycle, for your specific telescope
+    # For Kepler, set it to 0.88, as per Burke et al., 2015
+    # Set to other values based on the observational survey KOBE is being used for
+    
+    transit_signal_MA2002 = True
+    # Define the transit signal that will be calculated precisely based on the impact parameter and size ratio
+    # Model transit signal as per eq. 1, Mandel and Agol 2002
+    geo_condition_info = True
+    # Each planet will satisfy a particular condition from the (1)-(4) in eq. 1, Mandel and Agol 2002
+    # Set to true to get information on the condition satisfied, in the Output 'flag_transit_MA2002' column.
+    # Flags are: NT (no transit can be observed), GT (grazing transit), FT (full transit can be observed) and 
+    # Pdisk>*disk for planet disk larger than star's disk
+    
+    detection_efficiency = True
+    # Marks potential transiting planets as TCEs based on detection efficiency, as defined 
+    # and calculated in Christiansen, 2017
+    # Flag is flag_det_eff with outputs '1' and '-1' for TCE and not TCE, respectively
+    
+elif kobe_version == 1:
+    
+    # Resets inputs given above to ensure only KOBE version 1.0 is run
+    
+    include_ecc = False
+    average_transits = True
+    t_dur_winn = False
+    t_dur_kipping = False
+    duty_cycle = False
+    transit_signal_MA2002 = False
+    geo_condition_info = False
+    detection_efficiency = False
+    
